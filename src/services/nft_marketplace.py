@@ -1,3 +1,5 @@
+### LOTS OF NAME MODIFICATIONS TO MAKE IE MARKETPLACE TO RENTING
+
 from src.blockchain_utils.transaction_repository import (
     ApplicationTransactionRepository,
     ASATransactionRepository,
@@ -8,10 +10,12 @@ from algosdk import logic as algo_logic
 from algosdk.future import transaction as algo_txn
 from pyteal import compileTeal, Mode
 from algosdk.encoding import decode_address
-from src.smart_contracts import NFTMarketplaceASC1, nft_escrow
+from src.smart_contracts import NFTRentingASC1, nft_escrow
 
-
-class NFTMarketplace:
+# this is the main class which is created and used to rent NFTs.
+# this is not the pyTEAL, it is just the python logic by which different parts of 
+# the smart contract can be called and used.
+class NFTRenting:
     def __init__(
             self, admin_pk, admin_address, nft_id, client
     ):
@@ -22,7 +26,7 @@ class NFTMarketplace:
         self.client = client
 
         self.teal_version = 4
-        self.nft_marketplace_asc1 = NFTMarketplaceASC1()
+        self.nft_renting_asc1 = NFTRentingASC1()
 
         self.app_id = None
 
@@ -47,13 +51,13 @@ class NFTMarketplace:
 
     def app_initialization(self, nft_owner_address):
         approval_program_compiled = compileTeal(
-            self.nft_marketplace_asc1.approval_program(),
+            self.nft_renting_asc1.approval_program(),
             mode=Mode.Application,
             version=4,
         )
 
         clear_program_compiled = compileTeal(
-            self.nft_marketplace_asc1.clear_program(),
+            self.nft_renting_asc1.clear_program(),
             mode=Mode.Application,
             version=4
         )
@@ -76,8 +80,8 @@ class NFTMarketplace:
             creator_private_key=self.admin_pk,
             approval_program=approval_program_bytes,
             clear_program=clear_program_bytes,
-            global_schema=self.nft_marketplace_asc1.global_schema,
-            local_schema=self.nft_marketplace_asc1.local_schema,
+            global_schema=self.nft_renting_asc1.global_schema,
+            local_schema=self.nft_renting_asc1.local_schema,
             app_args=app_args,
             foreign_assets=[self.nft_id],
         )
@@ -94,8 +98,9 @@ class NFTMarketplace:
 
     def initialize_escrow(self):
         app_args = [
-            self.nft_marketplace_asc1.AppMethods.initialize_escrow,
-            decode_address(self.escrow_address),
+            self.nft_renting_asc1.AppMethods.initialize_escrow,
+            decode_address(self.escrow_address), 
+            self.DAO_address # need to introduce this above
         ]
 
         initialize_escrow_txn = ApplicationTransactionRepository.call_application(
@@ -130,7 +135,7 @@ class NFTMarketplace:
         return tx_id
 
     def make_sell_offer(self, sell_price: int, nft_owner_pk):
-        app_args = [self.nft_marketplace_asc1.AppMethods.make_sell_offer, sell_price]
+        app_args = [self.nft_renting_asc1.AppMethods.make_sell_offer, sell_price]
 
         app_call_txn = ApplicationTransactionRepository.call_application(
             client=self.client,
@@ -148,7 +153,8 @@ class NFTMarketplace:
                 nft_owner_address, buyer_address, buyer_pk, buy_price):
         # 1. Application call txn
         app_args = [
-            self.nft_marketplace_asc1.AppMethods.buy
+            self.nft_renting_asc1.AppMethods.buy,
+            "send_asa"
         ]
 
         app_call_txn = ApplicationTransactionRepository.call_application(client=self.client,

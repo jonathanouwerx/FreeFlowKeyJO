@@ -22,7 +22,6 @@ class NFTRentingInterface(ABC):
     def stop_rent_offer(self):
         pass
 
-    # This is a new method which needs to be implemented
     @abstractmethod
     def recall_NFT(self):
         pass
