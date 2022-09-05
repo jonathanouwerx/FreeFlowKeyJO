@@ -11,9 +11,7 @@ TO DO LIST:
 - Why is App.globalGet used so selectively?
 '''
 
-
 from src.renting_interfaces import NFTRentingInterface
-
 
 class NFTRentingASC1(NFTRentingInterface):
     # all the variables to be used by the stateful contract are defined here
@@ -30,7 +28,7 @@ class NFTRentingASC1(NFTRentingInterface):
         rent_end_date = Bytes("RENT_END_DATE") # int
         asset_renter = Bytes("ASSET_RENTER") # str
 
-    # these are teh different methods that can be be accessed on an application call
+    # these are the different methods that can be be accessed on an application call
     class AppMethods:
         initialize_escrow = "initializeEscrow"
         make_rent_offer = "makeRentOffer"
@@ -253,7 +251,6 @@ class NFTRentingASC1(NFTRentingInterface):
             Gtxn[1].asset_amount() == Int(1),
             Gtxn[1].asset_receiver() == App.globalGet(self.Variables.asa_owner)
             )  
-
 
         valid_unfreezing_of_asset = And(
             Gtxn[2].type_enum() == TxnType.AssetFreeze,
