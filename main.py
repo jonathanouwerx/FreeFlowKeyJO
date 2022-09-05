@@ -1,6 +1,6 @@
 from src.blockchain_utils.credentials import get_client, get_account_credentials
 from src.services.nft_service import NFTService
-from src.services.nft_marketplace import NFTMarketplace
+from src.services.nft_renting import NFTMarketplace
 
 client = get_client()
 admin_pk, admin_addr, _ = get_account_credentials(1)

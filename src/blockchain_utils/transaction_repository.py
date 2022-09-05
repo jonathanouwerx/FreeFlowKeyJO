@@ -155,11 +155,13 @@ class ASATransactionRepository:
         return txn
 
     @classmethod
-    def create_non_fungible_asa(cls,
+    def create_asa(cls,
                                 client: algod.AlgodClient,
                                 creator_private_key: str,
                                 unit_name: str,
                                 asset_name: str,
+                                total: int,
+                                decimals: int,
                                 note: Optional[bytes] = None,
                                 manager_address: Optional[str] = None,
                                 reserve_address: Optional[str] = None,
@@ -189,8 +191,8 @@ class ASATransactionRepository:
                                                    creator_private_key=creator_private_key,
                                                    unit_name=unit_name,
                                                    asset_name=asset_name,
-                                                   total=1,
-                                                   decimals=0,
+                                                   total=total,
+                                                   decimals=decimals,
                                                    note=note,
                                                    manager_address=manager_address,
                                                    reserve_address=reserve_address,
@@ -199,6 +201,8 @@ class ASATransactionRepository:
                                                    url=url,
                                                    default_frozen=default_frozen,
                                                    sign_transaction=sign_transaction)
+
+
 
     @classmethod
     def asa_opt_in(cls,

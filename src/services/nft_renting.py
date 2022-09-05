@@ -1,4 +1,3 @@
-### LOTS OF NAME MODIFICATIONS TO MAKE IE MARKETPLACE TO RENTING
 
 from src.blockchain_utils.transaction_repository import (
     ApplicationTransactionRepository,
@@ -125,7 +124,7 @@ class NFTRenting:
             client=self.client,
             sender_address=self.admin_address,
             receiver_address=self.escrow_address,
-            amount=1000000,
+            amount=1000000, ### this amount needs to be checked and changed
             sender_private_key=self.admin_pk,
             sign_transaction=True,
         )
