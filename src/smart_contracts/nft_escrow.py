@@ -2,6 +2,8 @@ from pyteal import *
 
 ### ALMOST FIXED ###
 
+# check if a stateful contract can be the clawback address
+
 def nft_escrow(app_id: int, asa_id: int):
 
     send_asa = Seq([
