@@ -253,7 +253,6 @@ class NFTRentingASC1(NFTRentingInterface):
             Gtxn[1].asset_receiver() == App.globalGet(self.Variables.asa_owner)
             )  
 
-
         valid_unfreezing_of_asset = And(
             Gtxn[2].type_enum() == TxnType.AssetFreeze,
             Gtxn[2].freeze_asset() == App.globalGet(self.Variables.asa_id),

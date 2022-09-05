@@ -42,9 +42,9 @@ def nft_escrow(app_id: int, asa_id: int):
         Assert(Gtxn[1].asset_close_to() == Global.zero_address()), # check what this does
         Assert(Gtxn[1].rekey_to() == Global.zero_address()), # check what this does
 
-        Assert(Gtxn[3].type_enum() == TxnType.AssetFreeze),
-        Assert(Gtxn[3].freeze_asset() == Int(asa_id)),
-        Assert(Gtxn[3].freeze_asset_frozen() == Int(0)),
+        Assert(Gtxn[2].type_enum() == TxnType.AssetFreeze),
+        Assert(Gtxn[2].freeze_asset() == Int(asa_id)),
+        Assert(Gtxn[2].freeze_asset_frozen() == Int(0)),
 
         Return(Int(1))
     ])
