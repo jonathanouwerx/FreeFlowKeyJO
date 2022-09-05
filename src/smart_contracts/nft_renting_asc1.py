@@ -154,7 +154,8 @@ class NFTRentingASC1(NFTRentingInterface):
 
         return If(can_rent).Then(update_state).Else(Return(Int(0)))
 
-    def rent(self):
+    def rent(self): # does there need to be a method parameter here?  'def rent(self, method):'
+        # I dont think so but it would be good to check
         """
         Atomic transfer of 3 transactions:
         1. Application call.

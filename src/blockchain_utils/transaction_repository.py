@@ -308,6 +308,41 @@ class ASATransactionRepository:
 
         return txn
 
+    @classmethod
+    def change_freeze_asa(cls,
+                   client: algod.AlgodClient,
+                   sender_address: str, # asset freeze
+                   target_address: str, # account having the asset frozen
+                   asa_id: int, # asset index
+                   freeze_bool: int, # True if freezing, False if unfreezing
+                   sender_private_key: Optional[str],
+                   sign_transaction: bool = True) -> Union[Transaction, SignedTransaction]:
+        """
+        :param client:
+        :param sender:
+        :param target:
+        :param asa_id:
+        :param new_freeze_state:
+        :param lease:
+        :param sender_private_key:
+        :param rekey_to
+        :param sign_transaction:
+        :return:
+        """
+        suggested_params = get_default_suggested_params(client=client)
+
+        txn = algo_txn.AssetFreezeTxn(sender=sender_address,
+                                        sp=suggested_params,
+                                        target=target_address,
+                                        new_freeze_state=freeze_bool,
+                                        index=asa_id
+                                    )
+        if sign_transaction:
+            txn = txn.sign(private_key=sender_private_key)
+
+        return txn
+
+
 
 class PaymentTransactionRepository:
 

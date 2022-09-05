@@ -17,11 +17,13 @@ from src.smart_contracts import NFTRentingASC1, nft_escrow
 # the smart contract can be called and used.
 class NFTRenting:
     def __init__(
-            self, admin_pk, admin_address, nft_id, client
+            self, admin_pk, admin_address, nft_id, DAO_address, NFT_owner_address, client
     ):
         self.admin_pk = admin_pk
         self.admin_address = admin_address
         self.nft_id = nft_id
+        self.DAO_address = DAO_address
+        self.NFT_owner_address = NFT_owner_address
 
         self.client = client
 
@@ -49,7 +51,7 @@ class NFTRenting:
     def escrow_address(self):
         return algo_logic.address(self.escrow_bytes)
 
-    def app_initialization(self, nft_owner_address):
+    def app_initialization(self):
         approval_program_compiled = compileTeal(
             self.nft_renting_asc1.approval_program(),
             mode=Mode.Application,
@@ -71,7 +73,7 @@ class NFTRenting:
         )
 
         app_args = [
-            decode_address(nft_owner_address),
+            decode_address(self.nft_owner_address),
             decode_address(self.admin_address),
         ]
 
@@ -100,7 +102,7 @@ class NFTRenting:
         app_args = [
             self.nft_renting_asc1.AppMethods.initialize_escrow,
             decode_address(self.escrow_address), 
-            self.DAO_address # need to introduce this above
+            self.DAO_address
         ]
 
         initialize_escrow_txn = ApplicationTransactionRepository.call_application(
@@ -134,8 +136,8 @@ class NFTRenting:
 
         return tx_id
 
-    def make_sell_offer(self, sell_price: int, nft_owner_pk):
-        app_args = [self.nft_renting_asc1.AppMethods.make_sell_offer, sell_price]
+    def make_rent_offer(self, rent_price: int, nft_owner_pk):
+        app_args = [self.nft_renting_asc1.AppMethods.make_rent_offer, rent_price]
 
         app_call_txn = ApplicationTransactionRepository.call_application(
             client=self.client,
@@ -149,59 +151,153 @@ class NFTRenting:
         tx_id = NetworkInteraction.submit_transaction(self.client, transaction=app_call_txn)
         return tx_id
 
-    def buy_nft(self,
-                nft_owner_address, buyer_address, buyer_pk, buy_price):
-        # 1. Application call txn
+    def rent_nft(self, renter_address, renter_pk, rent_price):
+
+        # 1. Application call transaction: renter calls application
+
         app_args = [
-            self.nft_renting_asc1.AppMethods.buy,
+            self.nft_renting_asc1.AppMethods.rent,
             "send_asa"
         ]
 
         app_call_txn = ApplicationTransactionRepository.call_application(client=self.client,
-                                                                         caller_private_key=buyer_pk,
+                                                                         caller_private_key=renter_pk,
                                                                          app_id=self.app_id,
                                                                          on_complete=algo_txn.OnComplete.NoOpOC,
                                                                          app_args=app_args,
                                                                          sign_transaction=False)
 
-        # 2. Payment transaction: buyer -> seller
+        # 2. Payment transaction: renter -> rentee
+
         asa_buy_payment_txn = PaymentTransactionRepository.payment(client=self.client,
-                                                                   sender_address=buyer_address,
-                                                                   receiver_address=nft_owner_address,
-                                                                   amount=buy_price,
+                                                                   sender_address=renter_address,
+                                                                   receiver_address=self.nft_owner_address,
+                                                                   amount=rent_price,
                                                                    sender_private_key=None,
                                                                    sign_transaction=False)
 
-        # 3. Asset transfer transaction: escrow -> buyer
+        # 3. Asset transfer transaction: escrow -> renter
 
         asa_transfer_txn = ASATransactionRepository.asa_transfer(client=self.client,
                                                                  sender_address=self.escrow_address,
-                                                                 receiver_address=buyer_address,
+                                                                 receiver_address=renter_address,
                                                                  amount=1,
                                                                  asa_id=self.nft_id,
-                                                                 revocation_target=nft_owner_address,
+                                                                 revocation_target=self.nft_owner_address,
+                                                                 sender_private_key=None,
+                                                                 sign_transaction=False)
+    
+        # 4. Asset freeze transaction: escrow freezing renter
+
+        asa_freeze_txn = ASATransactionRepository.change_freeze_asa(client=self.client,
+                                                                 sender_address=self.escrow_address,
+                                                                 target_address=renter_address,
+                                                                 asa_id=self.nft_id,
+                                                                 freeze_bool=True,
                                                                  sender_private_key=None,
                                                                  sign_transaction=False)
 
         # Atomic transfer
         gid = algo_txn.calculate_group_id([app_call_txn,
                                            asa_buy_payment_txn,
-                                           asa_transfer_txn])
+                                           asa_transfer_txn,
+                                           asa_freeze_txn])
 
         app_call_txn.group = gid
         asa_buy_payment_txn.group = gid
         asa_transfer_txn.group = gid
+        asa_freeze_txn.group = gid
 
-        app_call_txn_signed = app_call_txn.sign(buyer_pk)
+        app_call_txn_signed = app_call_txn.sign(renter_pk)
 
-        asa_buy_txn_signed = asa_buy_payment_txn.sign(buyer_pk)
+        asa_buy_txn_signed = asa_buy_payment_txn.sign(renter_pk)
 
         asa_transfer_txn_logic_signature = algo_txn.LogicSig(self.escrow_bytes)
         asa_transfer_txn_signed = algo_txn.LogicSigTransaction(asa_transfer_txn, asa_transfer_txn_logic_signature)
 
+        asa_freeze_txn_logic_signature = algo_txn.LogicSig(self.escrow_bytes)
+        asa_freeze_txn_signed = algo_txn.LogicSigTransaction(asa_freeze_txn, asa_freeze_txn_logic_signature)
+
         signed_group = [app_call_txn_signed,
                         asa_buy_txn_signed,
-                        asa_transfer_txn_signed]
+                        asa_transfer_txn_signed,
+                        asa_freeze_txn_signed]
+
+        tx_id = self.client.send_transactions(signed_group)
+        return tx_id
+
+    def stop_rent_offer(self, nft_owner_pk):
+        app_args = [self.nft_renting_asc1.AppMethods.stop_rent_offer]
+
+        app_call_txn = ApplicationTransactionRepository.call_application(
+            client=self.client,
+            caller_private_key=nft_owner_pk,
+            app_id=self.app_id,
+            on_complete=algo_txn.OnComplete.NoOpOC,
+            app_args=app_args,
+            sign_transaction=True,
+        )
+
+        tx_id = NetworkInteraction.submit_transaction(self.client, transaction=app_call_txn)
+        return tx_id
+
+    def recall_nft(self, renter_address, nft_owner_pk):
+
+        # 1. Application call transaction: rentee calls application
+
+        app_args = [
+            self.nft_renting_asc1.AppMethods.recall_NFT,
+            "return_asa"
+        ]
+
+        app_call_txn = ApplicationTransactionRepository.call_application(client=self.client,
+                                                                         caller_private_key=nft_owner_pk,
+                                                                         app_id=self.app_id,
+                                                                         on_complete=algo_txn.OnComplete.NoOpOC,
+                                                                         app_args=app_args,
+                                                                         sign_transaction=False)
+
+        # 2. Asset transfer transaction: escrow -> rentee
+
+        asa_transfer_txn = ASATransactionRepository.asa_transfer(client=self.client,
+                                                                 sender_address=self.escrow_address,
+                                                                 receiver_address=self.nft_owner_address,
+                                                                 amount=1,
+                                                                 asa_id=self.nft_id,
+                                                                 revocation_target=self.nft_owner_address,
+                                                                 sender_private_key=None,
+                                                                 sign_transaction=False)
+    
+        # 3. Asset freeze transaction: escrow unfreezing renter
+
+        asa_freeze_txn = ASATransactionRepository.change_freeze_asa(client=self.client,
+                                                                 sender_address=self.escrow_address,
+                                                                 target_address=renter_address,
+                                                                 asa_id=self.nft_id,
+                                                                 freeze_bool=False,
+                                                                 sender_private_key=None,
+                                                                 sign_transaction=False)
+
+        # Atomic transfer
+        gid = algo_txn.calculate_group_id([app_call_txn,
+                                           asa_transfer_txn,
+                                           asa_freeze_txn])
+
+        app_call_txn.group = gid
+        asa_transfer_txn.group = gid
+        asa_freeze_txn.group = gid
+
+        app_call_txn_signed = app_call_txn.sign(nft_owner_pk)
+
+        asa_transfer_txn_logic_signature = algo_txn.LogicSig(self.escrow_bytes)
+        asa_transfer_txn_signed = algo_txn.LogicSigTransaction(asa_transfer_txn, asa_transfer_txn_logic_signature)
+
+        asa_freeze_txn_logic_signature = algo_txn.LogicSig(self.escrow_bytes)
+        asa_freeze_txn_signed = algo_txn.LogicSigTransaction(asa_freeze_txn, asa_freeze_txn_logic_signature)
+
+        signed_group = [app_call_txn_signed,
+                        asa_transfer_txn_signed,
+                        asa_freeze_txn_signed]
 
         tx_id = self.client.send_transactions(signed_group)
         return tx_id
