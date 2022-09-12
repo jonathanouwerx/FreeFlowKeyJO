@@ -135,8 +135,8 @@ class NFTRenting:
 
         return tx_id
 
-    def make_rent_offer(self, rent_price: int, nft_owner_pk):
-        app_args = [self.nft_renting_asc1.AppMethods.make_rent_offer, rent_price]
+    def make_rent_offer(self, rent_price: int, rent_duration: int, nft_owner_pk):
+        app_args = [self.nft_renting_asc1.AppMethods.make_rent_offer, rent_price, rent_duration]
 
         app_call_txn = ApplicationTransactionRepository.call_application(
             client=self.client,
