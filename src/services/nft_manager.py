@@ -14,7 +14,10 @@ from src.smart_contracts import NFTRentingASC1, nft_escrow
 # this is the main class which is created and used to rent NFTs.
 # this is not the pyTEAL, it is just the python logic by which different parts of 
 # the smart contract can be called and used.
-class NFTRenting:
+class NFTManager:
+
+    ##----------------Initialization----------------##
+
     def __init__(
             self, admin_pk, admin_address, nft_id, DAO_address, NFT_owner_address, client
     ):
@@ -134,6 +137,48 @@ class NFTRenting:
         )
 
         return tx_id
+
+    ##----------------Buying----------------##
+
+    def buy_nft(self, buyer_address, buyer_pk, nft_owner_pk, amount):
+        ## Atomic Transfer:
+        
+        # 1. Payment transaction: buyer -> seller
+
+        asa_buy_payment_txn = PaymentTransactionRepository.payment(client=self.client,
+                                                                   sender_address=buyer_address,
+                                                                   receiver_address=self.nft_owner_address,
+                                                                   amount=amount,
+                                                                   sender_private_key=None,
+                                                                   sign_transaction=False)
+
+        # 2. Asset transfer transaction: seller -> buyer
+
+        asa_transfer_txn = ASATransactionRepository.asa_transfer(client=self.client,
+                                                                 sender_address=self.nft_owner_address,
+                                                                 receiver_address=buyer_address,
+                                                                 amount=1,
+                                                                 asa_id=self.asa_id,
+                                                                 sender_private_key=None,
+                                                                 sign_transaction=False)
+        
+
+        # Atomic transfer
+        gid = algo_txn.calculate_group_id([asa_buy_payment_txn,
+                                           asa_transfer_txn])
+
+        asa_buy_payment_txn.group = gid
+        asa_transfer_txn.group = gid
+
+        asa_buy_txn_signed = asa_buy_payment_txn.sign(buyer_pk)
+        asa_transfer_txn_signed = asa_transfer_txn.sign(nft_owner_pk)
+
+        signed_group = [asa_buy_txn_signed,
+                        asa_transfer_txn_signed]
+
+        tx_id = self.client.send_transactions(signed_group)
+
+    ##----------------Renting----------------##   
 
     def make_rent_offer(self, rent_price: int, rent_duration: int, nft_owner_pk):
         app_args = [self.nft_renting_asc1.AppMethods.make_rent_offer, rent_price, rent_duration]

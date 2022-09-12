@@ -1,12 +1,11 @@
 from multiprocessing.dummy import Array
-from simulation import Account, FreeFlowKey
+from simulation_tools import Account, FreeFlowKey
 from algosdk.v2client.algod import AlgodClient
 
 algod_address = "http://localhost:4001"
 algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 client = AlgodClient(algod_token, algod_address)
-
 
 
 ### TODO: resolve transaction currency issue. We have to use algos to fund
@@ -59,10 +58,15 @@ def main():
 
     # TODO: implement the get_wallet method
     alice_wallet = Alice.get_wallet()
-    alice_key = alice_wallet["keys"][0]
+    alice_key = alice_wallet["keys"]["public"]
     rent_fee = (10, ff_token)
-    alice.set_rental(alice_key, rent_fee)
+    # TODO: Find out what unit the duration is in ie seconds/hours/days?
+    bob.rent(ff_key, alice, 20_000, 86_400)
+
+
     print("Alice sets key up for rental:\n", alice_key)
+    print("Bob rents Alice's key:\n", key, alice, bob)
+
 
     key = get_rentals()[0]
     rent_fee = (10, ff_token)

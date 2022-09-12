@@ -1,11 +1,10 @@
-from src.services import NetworkInteraction, NFTRenting
+from src.services import NetworkInteraction, NFTManager
 from algosdk import account, mnemonic
 from src.blockchain_utils.transaction_repository import (
     ApplicationTransactionRepository,
     ASATransactionRepository,
     PaymentTransactionRepository,
 )
-from algosdk.future import transaction
 
 # Alice's journey renting out key to Bob
 # 
@@ -67,18 +66,18 @@ class FreeFlowKey():
 
         self.asa_id = asa_id
 
-        # create renting application
+        # create management application
         # admin below is simply the creating user, as they are admin in initial phases
-        nft_renting_tool = NFTRenting(admin_pk=self.asa_creator_pk,
+        nft_manager_tool = NFTManager(admin_pk=self.asa_creator_pk,
                                       admin_address=self.asa_creator_address,
                                       nft_id=self.asa_id,
                                       DAO_address = self.DAO_address,
                                       NFT_owner_address = self.asa_creator_address,
                                       client=client)
 
-        self.nft_renting_tool = nft_renting_tool
+        self.nft_manager_tool = nft_manager_tool
 
-        self.nft_renting_tool.app_initialization(nft_owner_address=self.asa_creator_address)
+        self.nft_manager_tool.app_initialization(nft_owner_address=self.asa_creator_address)
 
         # change freeze/clawback addresses of the nft to escrow  
         # change manager address to DAO
@@ -89,38 +88,36 @@ class FreeFlowKey():
             asa_id=self.nft_id,
             manager_address=self.DAO_address,
             reserve_address="",
-            freeze_address=self.nft_renting_tool.escrow_address,
+            freeze_address=self.nft_manager_tool.escrow_address,
             strict_empty_address_check=False,
-            clawback_address=self.nft_renting_tool.escrow_address,
+            clawback_address=self.nft_manager_tool.escrow_address,
             sign_transaction=True,
         )
 
         NetworkInteraction.submit_transaction(self.client, transaction=modify_asa_txn)
         
         # initialise escrow
-        self.nft_renting_tool.intialise_escrow()
+        self.nft_manager_tool.intialise_escrow()
 
         # fund escrow 
         # TODO: the funding amount is currently way too high and needs to be reduced
         # TODO: I should make funding amount a parameter
-        self.nft_renting_tool.fund_escrow()
+        self.nft_manager_tool.fund_escrow()
 
-
-
-
+    # TODO: Discover how to get account info from algorand blockchain
+    '''
     def __repr__():
-        # TODO: get asset info on algorand bc
         asset_info = get_assets()
         return(self.asset_name + ": " + asset_info)
-
-
-
-
+    '''
 
 
 
 class Account():
     def __init__(self, name: str, client):
+        # TODO: clarify how the private key is going to be managed in this simulation
+        # Do we want to keep it separate and only input it in necessary functions
+        # or have it as an attribute of the Account class
         self.name = name
 
         private_key, address = account.generate_account()
@@ -133,10 +130,9 @@ class Account():
         
         #self.wallet: Dict[Asset, int] = {: amount, tokens: []}
     
-    # TODO: Discover how to do this
+    # TODO: Discover how to get account info from algorand blockchain
     '''
     def __repr__():
-        # TODO: get account info on algorand bc
         asset_info = ""
         return(self.name + ": " + asset_info)
     '''
@@ -159,42 +155,7 @@ class Account():
 
     def buy(self, asset: Asset, seller: Account, amount: int):
         self.optin(asset)
-        ## Atomic Transfer:
-        
-        # 1. Payment transaction: buyer -> seller
-
-        asa_buy_payment_txn = PaymentTransactionRepository.payment(client=self.client,
-                                                                   sender_address=self.address,
-                                                                   receiver_address=seller.address,
-                                                                   amount=amount,
-                                                                   sender_private_key=None,
-                                                                   sign_transaction=False)
-
-        # 2. Asset transfer transaction: seller -> buyer
-
-        asa_transfer_txn = ASATransactionRepository.asa_transfer(client=self.client,
-                                                                 sender_address=seller.address,
-                                                                 receiver_address=self.address,
-                                                                 amount=1,
-                                                                 asa_id=asset.asa_id,
-                                                                 sender_private_key=None,
-                                                                 sign_transaction=False)
-        
-
-        # Atomic transfer
-        gid = transaction.calculate_group_id([asa_buy_payment_txn,
-                                           asa_transfer_txn])
-
-        asa_buy_payment_txn.group = gid
-        asa_transfer_txn.group = gid
-
-        asa_buy_txn_signed = asa_buy_payment_txn.sign(self.pk)
-        asa_transfer_txn_signed = asa_transfer_txn.sign(seller.pk)
-
-        signed_group = [asa_buy_txn_signed,
-                        asa_transfer_txn_signed]
-
-        tx_id = self.client.send_transactions(signed_group)
+        self.nft_manager_tool.buy_nft(self.address, self.pk, seller.pk, amount)
 
     def rent(self, asset: Asset, owner: Account, amount: int, duration: int):
         ### One thing to test is whether you can opt-in to an asset multiple times
@@ -202,5 +163,5 @@ class Account():
         
         self.optin(asset)
         
-        asset.nft_renting_tool.make_rent_offer(amount, duration, owner.pk)
-        asset.nft_renting_tool.rent_nft(self.address, self.pk, amount)
+        asset.nft_manager_tool.make_rent_offer(amount, duration, owner.pk)
+        asset.nft_manager_tool.rent_nft(self.address, self.pk, amount)
