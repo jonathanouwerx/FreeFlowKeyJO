@@ -11,6 +11,9 @@ from pyteal import compileTeal, Mode
 from algosdk.encoding import decode_address
 from src.smart_contracts import NFTRentingASC1, nft_escrow
 
+# TODO: Need to create functions for buying/selling, so that on the blockchain
+# we have data stored showing that a certain NFT is up for rent.
+
 # this is the main class which is created and used to rent NFTs.
 # this is not the pyTEAL, it is just the python logic by which different parts of 
 # the smart contract can be called and used.
