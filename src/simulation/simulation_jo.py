@@ -1,56 +1,50 @@
 from multiprocessing.dummy import Array
-from simulation_tools import Account, FreeFlowKey
-from algosdk.v2client.algod import AlgodClient
 import os
+import sys 
 
-algod_address = "http://localhost:4001"
-algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+sys.path.append(os.path.abspath("/Users/Jonathan/code/github/algorand/FreeFlowKeyJO"))
+from src.simulation.simulation_tools import Account, FreeFlowKey
 
-client = AlgodClient(algod_token, algod_address)
 
-faucet = {"address": "",
-          "private_key": ""}
 
 # * create ff token capabilities
-
+        
 # transactions and send payments with algorand. We might want an internal Threefold
 # liquidity pool for this process.
 
 # creates funded accounts used in this simulation
+#def genesis(client, faucet) -> Array[Account, Account, Account, FreeFlowKey]:
+def genesis(client, faucet):
 
-def genesis(client, faucet) -> Array[Account, Account, Account, FreeFlowKey]:
+    def generate(name):
+        from_dict = os.path.exists(f"src/simulation/{name}.json")
+        account = Account(from_dict, name=name, client=client, faucet=faucet)
+        account.store()
+        print("")
+        return account
+        
+    alice = generate("Alice")
+    bob = generate("Bob")
+    dao = generate("FreeFlowDAO")
 
-    #pseudo: if files don't exist:
-    if os.path.exists("free_flow_key.json"):
-        from_dict = False
-    else:
-        from_dict = True
-
-    alice = Account(from_dict, name="Alice", client=client, faucet=faucet)
-    bob = Account(from_dict, name="Bob", client=client, faucet=faucet)
-    dao = Account(from_dict, name="FreeFlow DAO", client=client, faucet=faucet)
+    ffk_dict = os.path.exists("src/simulation/free_flow_key.json")
 
     # creates a FreeFlowKey with the DAO as the owner
-    ff_key = FreeFlowKey(from_dict,
+    ff_key = FreeFlowKey(ffk_dict,
                         asa_creator_address=dao.address,
                         asa_creator_pk=dao.private_key,
                         client=client,
-                        unit_name="FreeFlowKey",
-                        asset_name="FFK",
+                        unit_name="FFK",
+                        asset_name="FreeFlowKey",
                         DAO_address=dao.private_key)
     
-    # TODO: Create the faucet account and manually fill it with algorand faucet
-    # Yes, that works
-
-    alice.store()
-    bob.store()
-    dao.store()
     ff_key.store()
 
     return (alice, bob, dao, ff_key)
 
 # Display keys that are available to be rented.
-def get_rentals() -> List[Asset]:
+# def get_rentals() -> List[Asset]:
+def get_rentals():
     # TODO: get keys id's which are available to rent from algorand bc 
     # assets that 
     # requires Python SDK version 1.3 or higher
@@ -63,16 +57,18 @@ def get_rentals() -> List[Asset]:
     rental_keys = []
     return rental_keys
 
-def main():
+def main(client, faucet):
 
-    alice, bob, dao, ff_token, ff_key = genesis() # This calling of genesis doesnt work
+    alice, bob, dao, ff_key = genesis(client, faucet) # This calling of genesis doesnt work
     # we need to perform genesis only once and in two steps, unless we figure out how
     # to access the main algorand faucet API
     # Instead, these values should be accessed from a csv file.
-    print("Created accounts:\n", alice, bob, dao)
-    print("Created assets:\n", ff_token, ff_key)
+    print("Created accounts:\n", alice,"\n",bob,"\n", dao)
+    print("Created asset:\n", ff_key)
 
-    alice.buy(ff_key, dao, 50_000)
+    exit()
+
+    alice.buy(client, ff_key, dao, 50_000)
     print("Alice buys key from DAO:\n")
     print(alice, bob)
 
@@ -89,5 +85,5 @@ def main():
     # set different prices for renting or disagree over other parameters
     keys_for_rent = get_rentals()
     key_to_rent = keys_for_rent[0]
-    bob.rent(key_to_rent, alice, 20_000)
+    bob.rent(client, key_to_rent, alice, 20_000)
     print("Bob rents Alice's key:\n", key_to_rent, alice, bob)

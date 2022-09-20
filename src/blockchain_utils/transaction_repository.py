@@ -34,7 +34,7 @@ class ApplicationTransactionRepository:
                            global_schema: algo_txn.StateSchema,
                            local_schema: algo_txn.StateSchema,
                            app_args: Optional[List[Any]] = None,
-                           foreign_assets: Optional[List[int]] = None,
+                           foreign_assets: Optional[List[str]] = None,
                            sign_transaction: bool = True) -> Union[Transaction, SignedTransaction]:
 
         creator_address = algo_acc.address_from_private_key(private_key=creator_private_key)
@@ -153,56 +153,6 @@ class ASATransactionRepository:
             txn = txn.sign(private_key=creator_private_key)
 
         return txn
-
-    @classmethod
-    def create_asa(cls,
-                                client: algod.AlgodClient,
-                                creator_private_key: str,
-                                unit_name: str,
-                                asset_name: str,
-                                total: int,
-                                decimals: int,
-                                note: Optional[bytes] = None,
-                                manager_address: Optional[str] = None,
-                                reserve_address: Optional[str] = None,
-                                freeze_address: Optional[str] = None,
-                                clawback_address: Optional[str] = None,
-                                url: Optional[str] = None,
-                                default_frozen: bool = False,
-                                sign_transaction: bool = True) -> Union[Transaction, SignedTransaction]:
-        """
-
-        :param client:
-        :param creator_private_key:
-        :param unit_name:
-        :param asset_name:
-        :param note:
-        :param manager_address:
-        :param reserve_address:
-        :param freeze_address:
-        :param clawback_address:
-        :param url:
-        :param default_frozen:
-        :param sign_transaction:
-        :return:
-        """
-
-        return ASATransactionRepository.create_asa(client=client,
-                                                   creator_private_key=creator_private_key,
-                                                   unit_name=unit_name,
-                                                   asset_name=asset_name,
-                                                   total=total,
-                                                   decimals=decimals,
-                                                   note=note,
-                                                   manager_address=manager_address,
-                                                   reserve_address=reserve_address,
-                                                   freeze_address=freeze_address,
-                                                   clawback_address=clawback_address,
-                                                   url=url,
-                                                   default_frozen=default_frozen,
-                                                   sign_transaction=sign_transaction)
-
-
 
     @classmethod
     def asa_opt_in(cls,

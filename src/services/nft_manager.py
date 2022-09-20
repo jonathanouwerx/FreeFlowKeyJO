@@ -4,7 +4,7 @@ from src.blockchain_utils.transaction_repository import (
     ASATransactionRepository,
     PaymentTransactionRepository,
 )
-from src.services import NetworkInteraction
+from src.services.network_interaction import NetworkInteraction
 from algosdk import logic as algo_logic
 from algosdk.future import transaction as algo_txn
 from pyteal import compileTeal, Mode
@@ -78,7 +78,7 @@ class NFTManager:
         )
 
         app_args = [
-            decode_address(self.nft_owner_address),
+            decode_address(self.NFT_owner_address),
             decode_address(self.admin_address),
         ]
 

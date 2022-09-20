@@ -114,7 +114,7 @@ class NFTRentingASC1(NFTRentingInterface):
             default_frozen,
             Assert(Txn.assets[0] == App.globalGet(self.Variables.asa_id)),
             Assert(asset_escrow.value() == Txn.application_args[1]),
-            Assert(default_frozen.value() == False),
+            Assert(default_frozen.value() == Int(0)), # TODO: Ensure this is asserting the correct orientation
             Assert(DAO_manager.value() == Txn.application_args[2]), 
             Assert(freeze_address.value() == Txn.application_args[1]),
             Assert(reserve_address.value() == Global.zero_address()),
@@ -198,7 +198,7 @@ class NFTRentingASC1(NFTRentingInterface):
 
         update_state = Seq([
             App.globalPut(self.Variables.app_state, self.AppState.renting),
-            App.globalPut(self.Variables.rent_end_date, App.globalGet(self.Variables.rent_duration)+Global.latest_timestamp()),
+            App.globalPut(self.Variables.rent_end_date, App.globalGet(self.Variables.asa_duration)+Global.latest_timestamp()),
             App.globalPut(self.Variables.asset_renter, Gtxn[2].asset_receiver()),
             Return(Int(1))
         ])

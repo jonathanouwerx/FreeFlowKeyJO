@@ -1,5 +1,7 @@
 import json
-from src.services import NetworkInteraction, NFTManager
+from src.services.nft_manager import NFTManager
+from src.services.network_interaction import NetworkInteraction
+
 from algosdk import account, mnemonic
 from src.blockchain_utils.transaction_repository import (
     ApplicationTransactionRepository,
@@ -27,10 +29,13 @@ class FreeFlowKey():
     # fund escrow
     def __init__(self, from_dict, **kwargs):
         if from_dict == False:
-            
+            print(f"Creating FreeFlowKey asset...")
+
+            client = kwargs.get('client', None)
+
             self.asa_creator_address = kwargs.get('asa_creator_address', None)
             self.asa_creator_pk = kwargs.get('asa_creator_pk', None)
-            self.client = kwargs.get('client', None)
+            
             self.DAO_address = kwargs.get('DAO_address', None)
 
             self.unit_name = kwargs.get('unit_name', None)
@@ -39,7 +44,7 @@ class FreeFlowKey():
         
             # creates and signs a transaction to create an asa with total of 1 and decimals of 0
             signed_txn = ASATransactionRepository.create_asa(
-                client=self.client,
+                client=client,
                 creator_private_key=self.asa_creator_pk,
                 unit_name=self.unit_name,
                 asset_name=self.asset_name,
@@ -51,13 +56,13 @@ class FreeFlowKey():
                 freeze_address=self.asa_creator_address,
                 clawback_address=self.asa_creator_address,
                 url=self.asa_url,
-                default_frozen=True,
+                default_frozen=False,
                 sign_transaction=True,
             )
 
             # submits asa creation transaction and receices the transaction id and asa id
             asa_id = NetworkInteraction.submit_asa_creation(
-                client=self.client, transaction=signed_txn
+                client=client, transaction=signed_txn
             )
 
             self.asa_id = asa_id
@@ -73,13 +78,13 @@ class FreeFlowKey():
 
             self.nft_manager_tool = nft_manager_tool
 
-            self.nft_manager_tool.app_initialization(nft_owner_address=self.asa_creator_address)
+            self.nft_manager_tool.app_initialization()
 
             # change freeze/clawback addresses of the nft to escrow  
             # change manager address to DAO
             # change reserve address to ''
             modify_asa_txn = ASATransactionRepository.change_asa_management(
-                client=self.client,
+                client=client,
                 current_manager_pk=self.nft_creator_pk,
                 asa_id=self.nft_id,
                 manager_address=self.DAO_address,
@@ -90,7 +95,7 @@ class FreeFlowKey():
                 sign_transaction=True,
             )
 
-            NetworkInteraction.submit_transaction(self.client, transaction=modify_asa_txn)
+            NetworkInteraction.submit_transaction(client, transaction=modify_asa_txn)
             
             # initialise escrow
             self.nft_manager_tool.intialise_escrow()
@@ -101,14 +106,18 @@ class FreeFlowKey():
             # The owner will fund everything
             self.nft_manager_tool.fund_escrow()
         else: 
-            with open(f"simulation/free_flow_key.json", "w") as self_file:
+            print(f"Retrieving instance of FreeFlowKey...")
+            with open(f"src/simulation/free_flow_key.json", "r") as self_file:
                 self_dict = json.load(self_file)
+            print(" - json file accessed")
             for key in self_dict:
                 setattr(self, key, self_dict[key])
+            print(" - object created")
 
     def store(self):
-        with open(f"simulation/free_flow_key.json", "w") as self_file:
+        with open(f"src/simulation/free_flow_key.json", "w") as self_file:
             json.dump(self.__dict__, self_file)
+        print(f"Instance of FreeFlowKey has been stored in a json file")
 
     # TODO: Discover how to get account info from algorand blockchain
     '''
@@ -122,7 +131,7 @@ class FreeFlowKey():
 class Account():
     def __init__(self, from_dict, **kwargs):
         '''
-        Inputs: from_dict, name, client
+        Inputs: from_dict, name
         '''
         if from_dict == False:
             # TODO: clarify how the private key is going to be managed in this simulation
@@ -131,27 +140,36 @@ class Account():
             # For this simulation, we can leave private key as attribute
             self.name = kwargs.get('name', None)
             
+            print(f"Creating account for {self.name}...")
+
             private_key, address = account.generate_account()
             self.private_key = private_key
             self.address = address
             self.mnemonic = mnemonic.from_private_key(private_key)
+            print(" - account created")
             # TODO: Clarify how client should be used ie defined on init and inputted
             # as a parameter each time a function is called
             # Leave as is for now, as it is simulation
-            self.client = kwargs.get('client', None)
-            
+            client = kwargs.get('client', None)
             faucet = kwargs.get('faucet', None)
-            self.fund(faucet, 500_000)
+            self.fund(client, faucet, 500_000)
             #self.wallet: Dict[Asset, int] = {: amount, tokens: []}
+            
+            print(" - account funded")
+
         else: 
-            with open(f"simulation/{kwargs.get('name', None)}.json", "w") as self_file:
+            print(f"Retrieving account for {kwargs.get('name', None)}...")
+            with open(f"src/simulation/{kwargs.get('name', None)}.json", "r") as self_file:
                 self_dict = json.load(self_file)
+            print(" - json file accessed")
             for key in self_dict:
                 setattr(self, key, self_dict[key])
+            print(" - object created")
     
     def store(self):
-        with open(f"simulation/{self.name}.json", "w") as self_file:
+        with open(f"src/simulation/{self.name}.json", "w") as self_file:
             json.dump(self.__dict__, self_file)
+        print(f"{self.name}'s account has been stored in a json file")
 
     # TODO: Discover how to get account info from algorand blockchain
     '''
@@ -164,8 +182,9 @@ class Account():
         pass
         # TODO: get all assets associated to account
 
-    def fund(self, faucet: dict, amount: int):
-        txn_id = PaymentTransactionRepository.payment(client=self.client,
+    # client needs to be added up a tier
+    def fund(self, client, faucet: dict, amount: int):
+        txn_id = PaymentTransactionRepository.payment(client=client,
                                                     sender_address=faucet["address"],
                                                     receiver_address=self.address,
                                                     amount=amount,
@@ -173,21 +192,22 @@ class Account():
                                                     sign_transaction=True)
 
     @property
-    def optin(self, asset: Asset):
+    def optin(self, client, asset: FreeFlowKey):
         opt_in_txn = ASATransactionRepository.asa_opt_in(
-            client=self.client, sender_private_key=self.pk, asa_id=asset.asa_id
+            client=client, sender_private_key=self.pk, asa_id=asset.asa_id
         )
 
-        tx_id = NetworkInteraction.submit_transaction(self.client, transaction=opt_in_txn)
+        tx_id = NetworkInteraction.submit_transaction(client, transaction=opt_in_txn)
 
-    def buy(self, asset: Asset, seller: Account, amount: int):
-        self.optin(asset)
+    #def buy(self, asset: FreeFlowKey, seller: Account, amount: int):
+    def buy(self, client, asset, seller, amount):
+        self.optin(client, asset)
         self.nft_manager_tool.buy_nft(self.address, self.pk, seller.pk, amount)
 
-    def set_rental(self, asset: Asset, amount: int, duration: int):
+    def set_rental(self, asset: FreeFlowKey, amount: int, duration: int):
         # TODO: One thing to test is whether you can opt-in to an asset multiple times
         asset.nft_manager_tool.make_rent_offer(amount, duration, self.pk)
 
-    def rent(self, asset: Asset, amount: int):
-        self.optin(asset)
+    def rent(self, client, asset: FreeFlowKey, amount: int):
+        self.optin(client, asset)
         asset.nft_manager_tool.rent_nft(self.address, self.pk, amount)

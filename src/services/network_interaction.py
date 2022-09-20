@@ -38,7 +38,7 @@ class NetworkInteraction:
         return suggested_params
 
     @staticmethod
-    def submit_asa_creation(client: algod.AlgodClient, transaction: SignedTransaction) -> (Optional[int], str):
+    def submit_asa_creation(client: algod.AlgodClient, transaction: SignedTransaction):
         """
         Submits a ASA creation transaction to the network. If the transaction is successful the ASA's id is returned.
         :param client:

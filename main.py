@@ -1,35 +1,80 @@
-from src.blockchain_utils.credentials import get_client, get_account_credentials
-from src.services.delete_nft_service import NFTService
-from src.services.nft_manager import NFTMarketplace
+from src.simulation.simulation_jo import main, genesis
+from algosdk.v2client.algod import AlgodClient
+from algosdk import account, mnemonic
 
-client = get_client()
-admin_pk, admin_addr, _ = get_account_credentials(1)
-buyer_pk, buyer_addr, _ = get_account_credentials(2)
+algod_address = "http://localhost:4001"
+algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
-nft_service = NFTService(nft_creator_address=admin_addr,
-                         nft_creator_pk=admin_pk,
-                         client=client,
-                         asset_name="Algobot",
-                         unit_name="Algobot")
+client = AlgodClient(algod_token, algod_address)
 
-nft_service.create_nft()
+faucet = {"address": "4DIMPSW5MJ64G56KO7FW3AYA7PH5KCUYNF4LKY4KVAHB6MHYSKDNJVMG7Y",
+        "private_key": "upLrumxBj3rCe54JegZW2m3795fQ/WZIOdGqvQX71jPg0MfK3WJ9w3fKd8ttgwD7z9UKmGl4tWOKqA4fMPiShg=="}
 
-nft_marketplace_service = NFTMarketplace(admin_pk=admin_pk,
-                                         admin_address=admin_addr,
-                                         client=client,
-                                         nft_id=nft_service.nft_id)
+main(client, faucet)
 
-nft_marketplace_service.app_initialization(nft_owner_address=admin_addr)
+quit()
 
-nft_service.change_nft_credentials_txn(escrow_address=nft_marketplace_service.escrow_address)
+from src.blockchain_utils.transaction_repository import ASATransactionRepository
+from src.services.network_interaction import NetworkInteraction
+from algosdk.future import transaction as algo_txn
 
-nft_marketplace_service.initialize_escrow()
-nft_marketplace_service.fund_escrow()
-nft_marketplace_service.make_sell_offer(sell_price=100000, nft_owner_pk=admin_pk)
+signed_txn = ASATransactionRepository.create_asa(
+                client=client,
+                creator_private_key=faucet["private_key"],
+                unit_name= "FFK",
+                asset_name= "FreeFlowKey",
+                total=1,
+                decimals=0, ### This needs to be decided
+                note=None,
+                manager_address=faucet["address"],
+                reserve_address=faucet["address"],
+                freeze_address=faucet["address"],
+                clawback_address=faucet["address"],
+                url=None,
+                default_frozen=True,
+                sign_transaction=True,
+            )
 
-nft_service.opt_in(buyer_pk)
 
-nft_marketplace_service.buy_nft(nft_owner_address=admin_addr,
-                                buyer_address=buyer_addr,
-                                buyer_pk=buyer_pk,
-                                buy_price=100000)
+suggested_params = client.suggested_params()
+
+print(suggested_params)
+
+txn = algo_txn.AssetConfigTxn(sender=faucet["address"],
+                                sp=suggested_params,
+                                total=1,
+                                default_frozen=False,
+                                unit_name="FFK",
+                                asset_name="FreeFlowKey",
+                                manager=faucet["address"],
+                                reserve=faucet["address"],
+                                freeze=faucet["address"],
+                                clawback=faucet["address"],
+                                decimals=0)
+
+print("\nTransaction created successfully\n")
+
+signed_txn = txn.sign(private_key=faucet["private_key"])
+
+print("\nTransaction signed successfully\n")
+
+txid = client.send_transaction(signed_txn)
+
+print("\nTransaction sent successfully\n")
+
+NetworkInteraction.wait_for_confirmation(client, txid)
+
+print("\nWaiting for confirmation...\n")
+
+try:
+        ptx = client.pending_transaction_info(txid)
+        print("Asset ID and Transaction ID:")
+        print(ptx["asset-index"], txid)
+except Exception as e:
+        # TODO: Proper logging needed.
+        print(e)
+        print('Unsuccessful creation of Algorand Standard Asset.')
+
+
+print("\nTransaction submitted successfully\n")
+
