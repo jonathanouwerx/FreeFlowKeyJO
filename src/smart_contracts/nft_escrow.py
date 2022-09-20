@@ -53,7 +53,15 @@ def nft_escrow(app_id: int, asa_id: int):
     # alternative is to assert that the state of the smart contract is up_for_rent/rented
     # alternative is more robust but more difficult
 
-    return Cond([Gtxn[0].app_args[1] == "send_asa", send_asa],
-                [Gtxn[0].app_args[1] == "return_asa", return_asa])
+    # I might need to change this to a true false.
+    # if arg[1] == True, send_asa
+    # if not, then always True, return_asa
 
+    return Cond([Btoi(Gtxn[0].application_args[1]), send_asa],
+                [Int(1), return_asa])
 
+    '''
+    return Cond([Gtxn[0].application_args[1] == "send_asa", send_asa],
+                [Gtxn[0].application_args[1] == "return_asa", return_asa])
+
+    '''

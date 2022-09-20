@@ -29,7 +29,7 @@ class FreeFlowKey():
     # fund escrow
     def __init__(self, from_dict, **kwargs):
         if from_dict == False:
-            print(f"Creating FreeFlowKey asset...")
+            print(f"Initializing FreeFlowKey instance...")
 
             client = kwargs.get('client', None)
 
@@ -41,7 +41,7 @@ class FreeFlowKey():
             self.unit_name = kwargs.get('unit_name', None)
             self.asset_name = kwargs.get('asset_name', None)
             self.asa_url = kwargs.get('asa_url', None)
-        
+            
             # creates and signs a transaction to create an asa with total of 1 and decimals of 0
             signed_txn = ASATransactionRepository.create_asa(
                 client=client,
@@ -61,9 +61,11 @@ class FreeFlowKey():
             )
 
             # submits asa creation transaction and receices the transaction id and asa id
-            asa_id = NetworkInteraction.submit_asa_creation(
+            asa_id, txid = NetworkInteraction.submit_asa_creation(
                 client=client, transaction=signed_txn
             )
+
+            print(" - Asset created successfully")
 
             self.asa_id = asa_id
 
@@ -80,13 +82,19 @@ class FreeFlowKey():
 
             self.nft_manager_tool.app_initialization()
 
+            print(" - Stateful contract initialized successfully.")
+
             # change freeze/clawback addresses of the nft to escrow  
             # change manager address to DAO
             # change reserve address to ''
+
+            print(self.asa_creator_pk)
+            print(len(self.asa_creator_pk))
+
             modify_asa_txn = ASATransactionRepository.change_asa_management(
                 client=client,
-                current_manager_pk=self.nft_creator_pk,
-                asa_id=self.nft_id,
+                current_manager_pk=self.asa_creator_pk,
+                asa_id=self.asa_id,
                 manager_address=self.DAO_address,
                 reserve_address="",
                 freeze_address=self.nft_manager_tool.escrow_address,
@@ -97,14 +105,19 @@ class FreeFlowKey():
 
             NetworkInteraction.submit_transaction(client, transaction=modify_asa_txn)
             
+            print(" - Asset modified successfully.")
+
             # initialise escrow
             self.nft_manager_tool.intialise_escrow()
+            print(" - Stateless contract initialized successfully.")
 
             # fund escrow 
             # TODO: the funding amount is currently way too high and needs to be reduced
             # TODO: I should make funding amount a parameter
             # The owner will fund everything
             self.nft_manager_tool.fund_escrow()
+            print(" - Stateless contract funded successfully.")
+
         else: 
             print(f"Retrieving instance of FreeFlowKey...")
             with open(f"src/simulation/free_flow_key.json", "r") as self_file:
@@ -152,6 +165,7 @@ class Account():
             # Leave as is for now, as it is simulation
             client = kwargs.get('client', None)
             faucet = kwargs.get('faucet', None)
+            # TODO: Fix the funding process
             self.fund(client, faucet, 500_000)
             #self.wallet: Dict[Asset, int] = {: amount, tokens: []}
             

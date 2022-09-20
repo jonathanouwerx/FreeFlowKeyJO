@@ -204,7 +204,7 @@ class NFTManager:
 
         app_args = [
             self.nft_renting_asc1.AppMethods.rent,
-            "send_asa"
+            1 # sends a True value in this send_asa bool field
         ]
 
         app_call_txn = ApplicationTransactionRepository.call_application(client=self.client,
@@ -294,7 +294,7 @@ class NFTManager:
 
         app_args = [
             self.nft_renting_asc1.AppMethods.recall_NFT,
-            "return_asa"
+            0 # sends a False value in this send_asa bool field
         ]
 
         app_call_txn = ApplicationTransactionRepository.call_application(client=self.client,

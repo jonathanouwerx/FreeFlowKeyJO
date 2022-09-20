@@ -1,3 +1,5 @@
+### EVALUATE TO BE DELETED ###
+
 from src.blockchain_utils.credentials import get_indexer
 import time
 

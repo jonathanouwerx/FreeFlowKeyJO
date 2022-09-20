@@ -1,3 +1,5 @@
+### TO BE DELETED ###
+
 from algosdk.v2client import algod
 from algosdk import account as algo_acc
 import yaml

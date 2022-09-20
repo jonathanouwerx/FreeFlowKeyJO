@@ -34,7 +34,7 @@ class ApplicationTransactionRepository:
                            global_schema: algo_txn.StateSchema,
                            local_schema: algo_txn.StateSchema,
                            app_args: Optional[List[Any]] = None,
-                           foreign_assets: Optional[List[str]] = None,
+                           foreign_assets: Optional[List[int]] = None,
                            sign_transaction: bool = True) -> Union[Transaction, SignedTransaction]:
 
         creator_address = algo_acc.address_from_private_key(private_key=creator_private_key)
@@ -247,6 +247,9 @@ class ASATransactionRepository:
 
         current_manager_address = algo_acc.address_from_private_key(private_key=current_manager_pk)
 
+        print(f"current_manager_address: {current_manager_address}")
+        print(f"current_manager_address length: {len(current_manager_address)}")
+
         txn = algo_txn.AssetConfigTxn(
             sender=current_manager_address,
             sp=params,
@@ -256,6 +259,9 @@ class ASATransactionRepository:
             freeze=freeze_address,
             clawback=clawback_address,
             strict_empty_address_check=strict_empty_address_check)
+
+        print(f"current_manager_pk: {current_manager_pk}")
+        print(f"current_manager_pk length: {len(current_manager_pk)}")
 
         if sign_transaction:
             txn = txn.sign(private_key=current_manager_pk)

@@ -1,7 +1,7 @@
 from src.services import NetworkInteraction
 from src.blockchain_utils.transaction_repository import ASATransactionRepository
 
-### TO BE DELETED ###
+### EVALUATE TO BE DELETED ###
 
 class NFTService:
     def __init__(
