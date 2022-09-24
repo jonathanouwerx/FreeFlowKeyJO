@@ -37,6 +37,8 @@ class NFTManager:
 
         self.app_id = None
 
+        #self.nft_renting_asc1.store_teal()
+
     @property
     def escrow_bytes(self):
         if self.app_id is None:
@@ -100,6 +102,8 @@ class NFTManager:
         transaction_response = self.client.pending_transaction_info(tx_id)
 
         self.app_id = transaction_response["application-index"]
+
+        print(f"App ID: {self.app_id}")
 
         return tx_id
 

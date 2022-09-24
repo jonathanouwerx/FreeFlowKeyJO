@@ -116,7 +116,7 @@ class NFTRentingASC1(NFTRentingInterface):
             Assert(Txn.assets[0] == App.globalGet(self.Variables.asa_id)),
             Assert(asset_escrow.value() == Txn.application_args[1]),
             Assert(default_frozen.value() == Int(0)), # TODO: Ensure this is asserting the correct orientation
-            #Assert(DAO_manager.value() == Txn.application_args[2]), 
+            Assert(DAO_manager.value() == Txn.application_args[2]), 
             Assert(freeze_address.value() == Txn.application_args[1]),
             Assert(reserve_address.value() == Global.zero_address()),
 
@@ -287,13 +287,16 @@ class NFTRentingASC1(NFTRentingInterface):
     def clear_program(self):
         return Return(Int(1))
 
-    with open("vote_approval.teal", "w") as f:
-        compiled = compileTeal(approval_program(), mode=Mode.Application, version=2)
-        f.write(compiled)
+    def store_teal(self):
+        with open("vote_approval.teal", "w") as f:
+            compiled = compileTeal(self.approval_program(), mode=Mode.Application, version=4)
+            f.write(compiled)
 
-    with open("vote_clear_state.teal", "w") as f:
-        compiled = compileTeal(clear_state_program(), mode=Mode.Application, version=2)
-        f.write(compiled)
+        with open("vote_clear_state.teal", "w") as f:
+            compiled = compileTeal(self.clear_program(), mode=Mode.Application, version=4)
+            f.write(compiled)
+
+        print("TEAL stored successfully")
 
     @property
     def global_schema(self):
