@@ -1,22 +1,25 @@
 module main
 
 import context
-import V.algorand.client.v2.algod
-import V.algorand.crypto2 as crypto
+import joe_conigliaro.algorand.client.v2.algod
+import joe_conigliaro.algorand.crypto2 as crypto
 import joe_conigliaro.algorand.transaction
 import joe_conigliaro.algorand.mnemonic
 
-
+fn main() {
+    println("Hello World")
+}
+/*
 fn main() {
 	algod_address :=  "https://testnet-algorand.api.purestake.io/ps2"
 	algod_token := "2MOR0HMzNG92jNIN89adW6GWQn0vcNL28JhWy9zT"
 	//headers = {"X-API-Key": algod_token}
 	
-    account := crypto.Account // new
-    account.generate_account() // new
+    //account := crypto.Account{} // new
+    //account.generate_account() // new
+    
+    account := crypto.generate_account()
     println(account) // new
-
-    //account := crypto.generate_account()
 
     passphrase := mnemonic.from_private_key(account.private_key) or {
 		panic('error generating mnemonic: $err')
@@ -79,3 +82,5 @@ fn main() {
     // println(('Amount sent: $confirmed_txn.transaction.txn.amount microAlgos\n')
     // println(('Fee: $confirmed_txn.transaction.txn.fee microAlgos\n')
 }
+
+*/
