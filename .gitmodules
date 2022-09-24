@@ -1,0 +1,3 @@
+[submodule "v-algorand-sdk"]
+	path = v-algorand-sdk
+	url = https://github.com/joe-conigliaro/v-algorand-sdk.git
