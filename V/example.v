@@ -1,29 +1,33 @@
 module main
 
 import context
-import algorand.client.v2.algod
-import algorand.crypto2 as crypto
-import algorand.transaction
-import algorand.mnemonic
+import V.algorand.client.v2.algod
+import V.algorand.crypto2 as crypto
+import joe_conigliaro.algorand.transaction
+import joe_conigliaro.algorand.mnemonic
 
 
 fn main() {
 	algod_address :=  "https://testnet-algorand.api.purestake.io/ps2"
 	algod_token := "2MOR0HMzNG92jNIN89adW6GWQn0vcNL28JhWy9zT"
-	headers = {"X-API-Key": algod_token}
+	//headers = {"X-API-Key": algod_token}
 	
-    account := crypto.generate_account()
+    account := crypto.Account // new
+    account.generate_account() // new
+    println(account) // new
+
+    //account := crypto.generate_account()
+
     passphrase := mnemonic.from_private_key(account.private_key) or {
 		panic('error generating mnemonic: $err')
 	}
     my_address := account.address.str()
 	
-	// mut algo_client := algod.make_client(algod_address, algod_token) or {
-	//	 panic('error making client: $err')}
+	mut algo_client := algod.make_client(algod_address, algod_token) or {
+		panic('error making client: $err')}
     
-    mut algo_client := algod.make_client_with_headers(algod_address, algod_token, headers) or {   
-		panic('error making client: $err')
-    }
+    //mut algo_client := algod.make_client_with_headers(algod_address, algod_token, headers) or {   
+	//	panic('error making client: $err')}
 
 	tx_params := algo_client.get_suggested_params(context.background()) or {
 		panic('error getting suggested params: $err')
