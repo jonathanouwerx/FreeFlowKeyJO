@@ -2,7 +2,7 @@
 
 OPTION 1: SMART CONTRACT
 
-Brief: Create a statefull application which is tied to a certain account and is
+Brief: Create a stateful application which is tied to a certain account and is
 required to sign in order for the account to purchase any FFKs
 (similar to FFK idea, will require unique hash linked to application ID, unless
 applications also have a unique creator address)
