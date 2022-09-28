@@ -3,6 +3,9 @@ import QRCodeModal from "algorand-walletconnect-qrcode-modal";
 import algosdk from "algosdk";
 import { formatJsonRpcRequest } from "@json-rpc-tools/utils";
 
+// ! Advanced method
+/* This is an alternative way to perform the wallet connection process
+
 // a function to see if a wallet has been connected already
 const checkIfWalletIsConnected = async () => {
   try {
@@ -91,7 +94,7 @@ const connectWallet = async () => {
   }
 }
 
-/* This is an alternative way to perform the wallet connection process
+*/
 
 // Create a connector
 const connector = new WalletConnect({
@@ -129,14 +132,19 @@ connector.on("disconnect", (error, payload) => {
     throw error;
   }
 });
-*/
+
 
 // python_filenames:
 // asset_creation - args: None
 // payment - args: sender_address, receiver_address, amount
-// asset_xfer = args: receiver_address, amount
+// asset_xfer = args: payment_sender, amount, asset_sender, asa_id
 
+daoAddress = 'LDPQGAISML43336YL7GAO4IEHJGGT7KTWJ3KTK5J52Q5B5WHZURKUEQU2M'
+daoPrivateKey = "ChzCeZtWst/ZeXNq5RnptVU8qWBAj0LYMCXPTyZbgkRY3wMBEmL5ve/YX8wHcQQ6TGn9U7J2qaup7qHQ9sfNIg=="
+asa_id = ""
 
+executeProcess('asset_creation', null, daoAddress, daoPrivateKey)
+//executeProcess('asset_xfer', [accounts[0], 50_000, daoAddress, asa_id], daoAddress, daoPrivateKey)
 
 const executeProcess = async (pythonFilename, inputArgs, daoAddress, daoPrivateKey) => {
   let {PythonShell} = require('python-shell')
@@ -194,17 +202,18 @@ const executeProcess = async (pythonFilename, inputArgs, daoAddress, daoPrivateK
   const request = formatJsonRpcRequest("algo_signTxn", requestParams);
   const result = await this.connector.sendCustomRequest(request);
 
-  // TODO: Consider whether to use this code or mine below
-  // TODO: Consider how many txns this will return - check walletconnect algo schema
+  // ? Consider whether to use this code or mine below
+  // ? This code might be better for a variable number of txns
   /* 
   const decodedResult = result.map(element => {
     return element ? new Uint8Array(Buffer.from(element, "base64")) : null;
   });
   */
-  // TODO: Consider how to have a variable number of txns
 
-  // decode the result and push into signed txns array // TODO: mbe switch result to decoded_result
-  const rawWalletTxnBlob = Buffer.from(result,'base64');
+  // decode the result and push into signed txns array 
+  // only takes the first txn, ie the one which needed to be signed by the wallet
+  // ? mbe switch result to decoded_result
+  const rawWalletTxnBlob = Buffer.from(result[0],'base64');
   signedWalletTxn = algosdk.decodeSignedTransaction(rawWalletTxnBlob) // This needs to be fixed
   signed.push( signedWalletTxn )
 
@@ -224,52 +233,52 @@ const executeProcess = async (pythonFilename, inputArgs, daoAddress, daoPrivateK
 }
 
 
-
 // TODO: Decide for the example how the DAO will sign with its private key
 // For this example, there will only be one DAO account
 // when it comes to production, there will be the DAO_creator_account and the DAO account
 
 // ! Deprecated method
-/* 
-const sendWCTransaction = async (python_filename, input_args) => {
-  let {PythonShell} = require('python-shell')
+  /* 
+  const sendWCTransaction = async (python_filename, input_args) => {
+    let {PythonShell} = require('python-shell')
 
-  var options = {
-      scriptPath: 'wallet_connect/basic_transactions/',
-      mode: 'text',
-      args: [input_args]
-  };
-  
-  PythonShell.run(`${python_filename}.py`, options, function (err, results) {
-      if (err) throw err;
-      // results is an array consisting of messages collected during execution
-      // results = [txn, message]
-      console.log('results: %j', results);
-  });
-
-  // identifies if there are any transactions to be signed by the DAO 
-  var arrayLength = results.length;
-  for (var i = 0; i < arrayLength; i++) {
-    if (results[i][2] == dao_address) {
-      // TODO: Create a function to sign the transaction, maybe a python binary?
-
-    }
-  }
+    var options = {
+        scriptPath: 'wallet_connect/basic_transactions/',
+        mode: 'text',
+        args: [input_args]
+    };
     
-  // requestParams should be an array of WalletTransaction objects, one for each transaction
-  // a WalletTransaction object has two fields, txn: string and message?: string
-  const requestParams = [results];
+    PythonShell.run(`${python_filename}.py`, options, function (err, results) {
+        if (err) throw err;
+        // results is an array consisting of messages collected during execution
+        // results = [txn, message]
+        console.log('results: %j', results);
+    });
 
-  const request = formatJsonRpcRequest("algo_signTxn", requestParams);
-  const result = await this.connector.sendCustomRequest(request);
-  const decodedResult = result.map(element => {
-    return element ? new Uint8Array(Buffer.from(element, "base64")) : null;
-  });
+    // identifies if there are any transactions to be signed by the DAO 
+    var arrayLength = results.length;
+    for (var i = 0; i < arrayLength; i++) {
+      if (results[i][2] == dao_address) {
+        // TODO: Create a function to sign the transaction, maybe a python binary?
 
-  console.log('decodedResult: %j', decodedResult)
+      }
+    }
+      
+    // requestParams should be an array of WalletTransaction objects, one for each transaction
+    // a WalletTransaction object has two fields, txn: string and message?: string
+    const requestParams = [results];
 
-  // TODO: python function to submit transaction
-}
-*/
+    const request = formatJsonRpcRequest("algo_signTxn", requestParams);
+    const result = await this.connector.sendCustomRequest(request);
+    const decodedResult = result.map(element => {
+      return element ? new Uint8Array(Buffer.from(element, "base64")) : null;
+    });
+
+    console.log('decodedResult: %j', decodedResult)
+
+    // TODO: python function to submit transaction
+  }
+  */
 
 
+//connector.killSession();

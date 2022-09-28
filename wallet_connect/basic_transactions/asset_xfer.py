@@ -11,7 +11,6 @@ asset_sender = sys.argv[3]
 # fourth argument is the asa_id
 asa_id = sys.argv[4]
 
-
 from algosdk.v2client import algod
 from algosdk.future import transaction
 from algosdk import encoding
