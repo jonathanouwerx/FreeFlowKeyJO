@@ -3,6 +3,8 @@ import QRCodeModal from "algorand-walletconnect-qrcode-modal";
 import algosdk from "algosdk";
 import { formatJsonRpcRequest } from "@json-rpc-tools/utils";
 
+
+
 // ! Advanced method
 /* This is an alternative way to perform the wallet connection process
 
@@ -114,8 +116,8 @@ connector.on("connect", (error, payload) => {
     throw error;
   }
 
-  // Get provided accounts
-  const { accounts } = payload.params[0];
+  // Get provided accounts and chainId
+  const { accounts, chainId } = payload.params[0];
 });
 
 connector.on("session_update", (error, payload) => {
@@ -123,14 +125,16 @@ connector.on("session_update", (error, payload) => {
     throw error;
   }
 
-  // Get updated accounts 
-  const { accounts } = payload.params[0];
+  // Get updated accounts and chainId
+  const { accounts, chainId } = payload.params[0];
 });
 
 connector.on("disconnect", (error, payload) => {
   if (error) {
     throw error;
   }
+
+  // Delete connector
 });
 
 

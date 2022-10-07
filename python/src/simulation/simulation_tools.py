@@ -125,6 +125,8 @@ class FreeFlowKey():
             print(" - object created")
 
     def store(self):
+        print(self.__dict__)
+        print(json.dumps(self.__dict__))
         with open(f"src/simulation/free_flow_key.json", "w") as self_file:
             json.dump(self.__dict__, self_file)
         print(f"Instance of FreeFlowKey has been stored in a json file")

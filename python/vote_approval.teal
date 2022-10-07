@@ -1,0 +1,336 @@
+#pragma version 4
+txn ApplicationID
+int 0
+==
+bnz main_l20
+txna ApplicationArgs 0
+byte "initializeEscrow"
+==
+bnz main_l19
+txna ApplicationArgs 0
+byte "makeRentOffer"
+==
+bnz main_l16
+txna ApplicationArgs 0
+byte "Rent"
+==
+bnz main_l13
+txna ApplicationArgs 0
+byte "stopRentOffer"
+==
+bnz main_l10
+txna ApplicationArgs 0
+byte "recallNFT"
+==
+bnz main_l7
+err
+main_l7:
+global GroupSize
+int 1
+==
+byte "APP_STATE"
+app_global_get
+int 3
+==
+&&
+global LatestTimestamp
+byte "RENT_END_DATE"
+app_global_get
+>=
+&&
+gtxn 1 TypeEnum
+int axfer
+==
+gtxn 1 Sender
+byte "ESCROW_ADDRESS"
+app_global_get
+==
+&&
+gtxn 1 AssetSender
+byte "ASSET_RENTER"
+app_global_get
+==
+&&
+gtxn 1 XferAsset
+byte "ASA_ID"
+app_global_get
+==
+&&
+gtxn 1 AssetAmount
+int 1
+==
+&&
+gtxn 1 AssetReceiver
+byte "ASA_OWNER"
+app_global_get
+==
+&&
+&&
+gtxn 2 TypeEnum
+int afrz
+==
+gtxn 2 FreezeAsset
+byte "ASA_ID"
+app_global_get
+==
+&&
+gtxn 2 FreezeAssetAccount
+byte "ASSET_RENTER"
+app_global_get
+==
+&&
+gtxn 2 FreezeAssetFrozen
+int 0
+==
+&&
+&&
+bnz main_l9
+int 0
+return
+main_l9:
+byte "APP_STATE"
+int 1
+app_global_put
+int 1
+return
+main_l10:
+global GroupSize
+int 2
+==
+txn Sender
+byte "ASA_OWNER"
+app_global_get
+==
+&&
+byte "APP_STATE"
+app_global_get
+int 0
+!=
+&&
+bnz main_l12
+int 0
+return
+main_l12:
+byte "APP_STATE"
+int 1
+app_global_put
+int 1
+return
+main_l13:
+global GroupSize
+int 4
+==
+byte "APP_STATE"
+app_global_get
+int 2
+==
+&&
+gtxn 1 TypeEnum
+int pay
+==
+gtxn 1 Receiver
+byte "ASA_OWNER"
+app_global_get
+==
+&&
+gtxn 1 Amount
+byte "ASA_PRICE"
+app_global_get
+==
+&&
+gtxn 1 Sender
+gtxn 0 Sender
+==
+&&
+gtxn 1 Sender
+gtxn 2 AssetReceiver
+==
+&&
+&&
+gtxn 2 TypeEnum
+int axfer
+==
+gtxn 2 Sender
+byte "ESCROW_ADDRESS"
+app_global_get
+==
+&&
+gtxn 2 XferAsset
+byte "ASA_ID"
+app_global_get
+==
+&&
+gtxn 2 AssetAmount
+int 1
+==
+&&
+&&
+gtxn 3 TypeEnum
+int afrz
+==
+gtxn 3 FreezeAsset
+byte "ASA_ID"
+app_global_get
+==
+&&
+gtxn 3 FreezeAssetAccount
+gtxn 2 AssetReceiver
+==
+&&
+gtxn 3 FreezeAssetFrozen
+int 1
+==
+&&
+&&
+bnz main_l15
+int 0
+return
+main_l15:
+byte "APP_STATE"
+int 3
+app_global_put
+byte "RENT_END_DATE"
+byte "ASA_DURATION"
+app_global_get
+global LatestTimestamp
++
+app_global_put
+byte "ASSET_RENTER"
+gtxn 2 AssetReceiver
+app_global_put
+int 1
+return
+main_l16:
+global GroupSize
+int 1
+==
+byte "APP_STATE"
+app_global_get
+int 1
+==
+byte "APP_STATE"
+app_global_get
+int 2
+==
+||
+&&
+txn Sender
+byte "ASA_OWNER"
+app_global_get
+==
+&&
+txn NumAppArgs
+int 3
+==
+&&
+bnz main_l18
+int 0
+return
+main_l18:
+byte "ASA_PRICE"
+txna ApplicationArgs 1
+btoi
+app_global_put
+byte "ASA_DURATION"
+txna ApplicationArgs 2
+btoi
+app_global_put
+byte "APP_STATE"
+int 2
+app_global_put
+int 1
+return
+main_l19:
+int 0
+byte "ESCROW_ADDRESS"
+app_global_get_ex
+store 1
+store 0
+load 1
+int 0
+==
+assert
+byte "APP_ADMIN"
+app_global_get
+txn Sender
+==
+assert
+global GroupSize
+int 1
+==
+assert
+txna Assets 0
+asset_params_get AssetClawback
+store 3
+store 2
+txna Assets 0
+asset_params_get AssetManager
+store 5
+store 4
+txna Assets 0
+asset_params_get AssetFreeze
+store 7
+store 6
+txna Assets 0
+asset_params_get AssetReserve
+store 9
+store 8
+txna Assets 0
+asset_params_get AssetDefaultFrozen
+store 11
+store 10
+txna Assets 0
+byte "ASA_ID"
+app_global_get
+==
+assert
+load 2
+txna ApplicationArgs 1
+==
+assert
+load 10
+int 0
+==
+assert
+load 4
+txna ApplicationArgs 2
+==
+assert
+load 6
+txna ApplicationArgs 1
+==
+assert
+load 8
+global ZeroAddress
+==
+assert
+byte "ESCROW_ADDRESS"
+txna ApplicationArgs 1
+app_global_put
+byte "DAO_ADDRESS"
+txna ApplicationArgs 2
+app_global_put
+byte "APP_STATE"
+int 1
+app_global_put
+int 1
+return
+main_l20:
+txn NumAppArgs
+int 2
+==
+assert
+byte "APP_STATE"
+int 0
+app_global_put
+byte "ASA_ID"
+txna Assets 0
+app_global_put
+byte "ASA_OWNER"
+txna ApplicationArgs 0
+app_global_put
+byte "APP_ADMIN"
+txna ApplicationArgs 1
+app_global_put
+int 1
+return

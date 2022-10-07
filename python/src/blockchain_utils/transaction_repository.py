@@ -4,7 +4,7 @@ from algosdk.future import transaction as algo_txn
 from typing import List, Any, Optional, Union
 from algosdk import account as algo_acc
 from algosdk.future.transaction import Transaction, SignedTransaction
-
+from algosdk import encoding
 
 def get_default_suggested_params(client: algod.AlgodClient):
     """
@@ -51,9 +51,9 @@ class ApplicationTransactionRepository:
                                             foreign_assets=foreign_assets)
 
         if sign_transaction:
-            txn = txn.sign(private_key=creator_private_key)
+            signed_txn = txn.sign(private_key=creator_private_key)
 
-        return txn
+        return signed_txn
 
     @classmethod
     def call_application(cls,

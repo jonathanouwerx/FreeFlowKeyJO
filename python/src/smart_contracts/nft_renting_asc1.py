@@ -116,7 +116,8 @@ class NFTRentingASC1(NFTRentingInterface):
             Assert(Txn.assets[0] == App.globalGet(self.Variables.asa_id)),
             Assert(asset_escrow.value() == Txn.application_args[1]),
             Assert(default_frozen.value() == Int(0)), # TODO: Ensure this is asserting the correct orientation
-            Assert(DAO_manager.value() == Txn.application_args[2]), 
+            # THIS IS AN ERROR
+            #Assert(DAO_manager.value() == Txn.application_args[2]), 
             Assert(freeze_address.value() == Txn.application_args[1]),
             Assert(reserve_address.value() == Global.zero_address()),
 
